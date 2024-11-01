@@ -34,6 +34,11 @@ require(['vs/editor/editor.main'], function () {
 
     document.getElementById('runButton').addEventListener('click', runCode);
     document.getElementById('shareButton').addEventListener('click', shareCode);
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+    window.addEventListener('resize', () => {
+        editor.layout();
+    });
 });
 
 async function runCode() {
@@ -45,7 +50,6 @@ async function runCode() {
     consoleElement.textContent = '';
 
     try {
-        // Compile TypeScript
         const worker = await monaco.languages.typescript.getTypeScriptWorker();
         const uri = editor.getModel().uri;
         const client = await worker(uri);
@@ -89,4 +93,11 @@ async function shareCode() {
         console.error('Error sharing code:', error);
         alert('Failed to share code. Please try again.');
     }
+}
+
+function toggleTheme() {
+    const currentTheme = editor.getOption(monaco.editor.EditorOption.theme);
+    const newTheme = currentTheme === 'vs-dark' ? 'vs-light' : 'vs-dark';
+    editor.updateOptions({ theme: newTheme });
+    document.body.classList.toggle('light-theme');
 }
