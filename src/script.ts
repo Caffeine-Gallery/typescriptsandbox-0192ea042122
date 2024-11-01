@@ -60,48 +60,57 @@ function initializeEditor() {
             allowNonTsExtensions: true
         });
 
-        editor = monaco.editor.create(document.getElementById('editor')!, {
-            value: files[currentFile],
-            language: 'typescript',
-            theme: 'vs-dark',
-            minimap: { enabled: false },
-            automaticLayout: true
-        });
+        const editorElement = document.getElementById('editor');
+        if (editorElement) {
+            editor = monaco.editor.create(editorElement, {
+                value: files[currentFile],
+                language: 'typescript',
+                theme: 'vs-dark',
+                minimap: { enabled: false },
+                automaticLayout: true
+            });
 
-        editor.onDidChangeCursorPosition(e => {
-            if (userId) {
-                backend.updateUserPosition(userId, currentFile, e.position.lineNumber, e.position.column);
+            editor.onDidChangeCursorPosition(e => {
+                if (userId) {
+                    backend.updateUserPosition(userId, currentFile, e.position.lineNumber, e.position.column);
+                }
+            });
+
+            // Load code from URL if present
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedCode = urlParams.get('code');
+            if (sharedCode) {
+                files[currentFile] = atob(sharedCode);
+                editor.setValue(files[currentFile]);
             }
-        });
 
-        // Load code from URL if present
-        const urlParams = new URLSearchParams(window.location.search);
-        const sharedCode = urlParams.get('code');
-        if (sharedCode) {
-            files[currentFile] = atob(sharedCode);
-            editor.setValue(files[currentFile]);
+            setupEventListeners();
+            updateFileList();
+            initAuth();
+        } else {
+            console.error("Editor element not found");
         }
-
-        setupEventListeners();
-        updateFileList();
-        initAuth();
     });
 }
 
 function setupEventListeners() {
-    const runButton = document.getElementById('runButton');
-    const shareButton = document.getElementById('shareButton');
-    const themeToggle = document.getElementById('themeToggle');
-    const addFileButton = document.getElementById('addFileButton');
-    const loginButton = document.getElementById('loginButton');
-    const logoutButton = document.getElementById('logoutButton');
+    const elements = [
+        { id: 'runButton', handler: runCode },
+        { id: 'shareButton', handler: shareCode },
+        { id: 'themeToggle', handler: toggleTheme },
+        { id: 'addFileButton', handler: addFile },
+        { id: 'loginButton', handler: login },
+        { id: 'logoutButton', handler: logout }
+    ];
 
-    if (runButton) runButton.addEventListener('click', runCode);
-    if (shareButton) shareButton.addEventListener('click', shareCode);
-    if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
-    if (addFileButton) addFileButton.addEventListener('click', addFile);
-    if (loginButton) loginButton.addEventListener('click', login);
-    if (logoutButton) logoutButton.addEventListener('click', logout);
+    elements.forEach(({ id, handler }) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('click', handler);
+        } else {
+            console.warn(`Element with id '${id}' not found`);
+        }
+    });
 
     window.addEventListener('resize', () => {
         if (editor) editor.layout();
@@ -229,4 +238,9 @@ function getColorForUser(userId: string): string {
     return colors[userId.charCodeAt(0) % colors.length];
 }
 
-document.addEventListener('DOMContentLoaded', initializeEditor);
+// Ensure the DOM is fully loaded before initializing
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeEditor);
+} else {
+    initializeEditor();
+}
