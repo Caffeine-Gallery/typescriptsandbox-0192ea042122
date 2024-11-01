@@ -51,36 +51,44 @@ function logout() {
     }
 }
 
-require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.30.1/min/vs' } });
+function initializeEditor() {
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.30.1/min/vs' } });
 
-require(['vs/editor/editor.main'], function () {
-    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-        target: monaco.languages.typescript.ScriptTarget.ES2015,
-        allowNonTsExtensions: true
-    });
+    require(['vs/editor/editor.main'], function () {
+        monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+            target: monaco.languages.typescript.ScriptTarget.ES2015,
+            allowNonTsExtensions: true
+        });
 
-    editor = monaco.editor.create(document.getElementById('editor')!, {
-        value: files[currentFile],
-        language: 'typescript',
-        theme: 'vs-dark',
-        minimap: { enabled: false },
-        automaticLayout: true
-    });
+        editor = monaco.editor.create(document.getElementById('editor')!, {
+            value: files[currentFile],
+            language: 'typescript',
+            theme: 'vs-dark',
+            minimap: { enabled: false },
+            automaticLayout: true
+        });
 
-    editor.onDidChangeCursorPosition(e => {
-        if (userId) {
-            backend.updateUserPosition(userId, currentFile, e.position.lineNumber, e.position.column);
+        editor.onDidChangeCursorPosition(e => {
+            if (userId) {
+                backend.updateUserPosition(userId, currentFile, e.position.lineNumber, e.position.column);
+            }
+        });
+
+        // Load code from URL if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedCode = urlParams.get('code');
+        if (sharedCode) {
+            files[currentFile] = atob(sharedCode);
+            editor.setValue(files[currentFile]);
         }
+
+        setupEventListeners();
+        updateFileList();
+        initAuth();
     });
+}
 
-    // Load code from URL if present
-    const urlParams = new URLSearchParams(window.location.search);
-    const sharedCode = urlParams.get('code');
-    if (sharedCode) {
-        files[currentFile] = atob(sharedCode);
-        editor.setValue(files[currentFile]);
-    }
-
+function setupEventListeners() {
     const runButton = document.getElementById('runButton');
     const shareButton = document.getElementById('shareButton');
     const themeToggle = document.getElementById('themeToggle');
@@ -96,12 +104,9 @@ require(['vs/editor/editor.main'], function () {
     if (logoutButton) logoutButton.addEventListener('click', logout);
 
     window.addEventListener('resize', () => {
-        editor.layout();
+        if (editor) editor.layout();
     });
-
-    updateFileList();
-    initAuth();
-});
+}
 
 function updateFileList() {
     const fileList = document.getElementById('fileList');
@@ -223,3 +228,5 @@ function getColorForUser(userId: string): string {
     const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
     return colors[userId.charCodeAt(0) % colors.length];
 }
+
+document.addEventListener('DOMContentLoaded', initializeEditor);
