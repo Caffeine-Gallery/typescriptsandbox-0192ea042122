@@ -1,4 +1,21 @@
+type UserPosition = 
+ record {
+   fileId: FileId;
+   position: Position;
+ };
+type UserId = text;
+type Position = 
+ record {
+   column: nat;
+   line: nat;
+ };
+type FileId = text;
 service : {
-  getCode: (nat) -> (opt text) query;
-  saveCode: (text) -> (nat);
+  getCode: (FileId) -> (opt text) query;
+  getUserPositions: () -> (vec record {
+                                 UserId;
+                                 UserPosition;
+                               }) query;
+  saveCode: (FileId, text) -> ();
+  updateUserPosition: (UserId, FileId, nat, nat) -> ();
 }

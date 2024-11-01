@@ -6,36 +6,37 @@
     <title>ICP TypeScript PlayGround</title>
     <link rel="stylesheet" href="index.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.30.1/min/vs/loader.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
     <div id="app">
         <header>
-            <h1>ICP TypeScript PlayGround</h1>
+            <h1><i class="material-icons">code</i> ICP TypeScript PlayGround</h1>
             <div class="controls">
-                <button id="runButton" class="primary-button"><i class="fas fa-play"></i> Run</button>
-                <button id="shareButton" class="secondary-button"><i class="fas fa-share"></i> Share</button>
-                <button id="themeToggle" class="secondary-button"><i class="fas fa-adjust"></i> Toggle Theme</button>
+                <button id="runButton" class="primary-button"><i class="material-icons">play_arrow</i> Run</button>
+                <button id="shareButton" class="secondary-button"><i class="material-icons">share</i> Share</button>
+                <button id="themeToggle" class="secondary-button"><i class="material-icons">brightness_medium</i></button>
             </div>
         </header>
         <main>
             <div id="file-explorer">
                 <div class="file-explorer-header">
-                    <h3>Files</h3>
-                    <button id="addFileButton" class="secondary-button"><i class="fas fa-plus"></i></button>
+                    <h3><i class="material-icons">folder</i> Files</h3>
+                    <button id="addFileButton" class="secondary-button"><i class="material-icons">add</i></button>
                 </div>
                 <ul id="fileList"></ul>
             </div>
             <div id="editor-container">
                 <div id="editor"></div>
+                <div id="collaborators"></div>
             </div>
             <div id="output-container">
                 <div id="output">
-                    <h3>Output</h3>
+                    <h3><i class="material-icons">output</i> Output</h3>
                     <pre id="result"></pre>
                 </div>
                 <div id="console">
-                    <h3>Console</h3>
+                    <h3><i class="material-icons">terminal</i> Console</h3>
                     <pre id="console-output"></pre>
                 </div>
             </div>

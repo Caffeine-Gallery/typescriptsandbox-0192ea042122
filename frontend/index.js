@@ -1,4 +1,5 @@
 import { backend } from 'declarations/backend';
+import { AuthClient } from "@dfinity/auth-client";
 
 let editor;
 let currentFile = 'main.ts';
@@ -11,6 +12,36 @@ const files = {
 const result = greet("User");
 console.log(result);`
 };
+
+let authClient;
+let userId;
+
+async function initAuth() {
+    authClient = await AuthClient.create();
+    if (await authClient.isAuthenticated()) {
+        handleAuthenticated();
+    }
+}
+
+async function handleAuthenticated() {
+    userId = await authClient.getIdentity().getPrincipal().toText();
+    document.getElementById('loginButton').style.display = 'none';
+    document.getElementById('logoutButton').style.display = 'block';
+    startCollaboration();
+}
+
+function login() {
+    authClient.login({
+        identityProvider: "https://identity.ic0.app/#authorize",
+        onSuccess: handleAuthenticated
+    });
+}
+
+function logout() {
+    authClient.logout();
+    document.getElementById('loginButton').style.display = 'block';
+    document.getElementById('logoutButton').style.display = 'none';
+}
 
 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.30.1/min/vs' } });
 
@@ -28,6 +59,12 @@ require(['vs/editor/editor.main'], function () {
         automaticLayout: true
     });
 
+    editor.onDidChangeCursorPosition(e => {
+        if (userId) {
+            backend.updateUserPosition(userId, currentFile, e.position.lineNumber, e.position.column);
+        }
+    });
+
     // Load code from URL if present
     const urlParams = new URLSearchParams(window.location.search);
     const sharedCode = urlParams.get('code');
@@ -40,12 +77,15 @@ require(['vs/editor/editor.main'], function () {
     document.getElementById('shareButton').addEventListener('click', shareCode);
     document.getElementById('themeToggle').addEventListener('click', toggleTheme);
     document.getElementById('addFileButton').addEventListener('click', addFile);
+    document.getElementById('loginButton').addEventListener('click', login);
+    document.getElementById('logoutButton').addEventListener('click', logout);
 
     window.addEventListener('resize', () => {
         editor.layout();
     });
 
     updateFileList();
+    initAuth();
 });
 
 function updateFileList() {
@@ -53,7 +93,7 @@ function updateFileList() {
     fileList.innerHTML = '';
     Object.keys(files).forEach(filename => {
         const li = document.createElement('li');
-        li.textContent = filename;
+        li.innerHTML = `<i class="material-icons">description</i> ${filename}`;
         li.addEventListener('click', () => switchFile(filename));
         if (filename === currentFile) {
             li.classList.add('active');
@@ -121,10 +161,10 @@ async function runCode() {
 async function shareCode() {
     const code = editor.getValue();
     try {
-        const id = await backend.saveCode(code);
+        await backend.saveCode(currentFile, code);
         const encodedCode = btoa(code);
         const shareUrl = `${window.location.origin}${window.location.pathname}?code=${encodedCode}`;
-        alert(`Share this URL: ${shareUrl}\nOr use this ID: ${id}`);
+        alert(`Share this URL: ${shareUrl}`);
     } catch (error) {
         console.error('Error sharing code:', error);
         alert('Failed to share code. Please try again.');
@@ -136,4 +176,31 @@ function toggleTheme() {
     const newTheme = currentTheme === 'vs-dark' ? 'vs-light' : 'vs-dark';
     editor.updateOptions({ theme: newTheme });
     document.body.classList.toggle('light-theme');
+}
+
+async function startCollaboration() {
+    setInterval(async () => {
+        const positions = await backend.getUserPositions();
+        updateCollaborators(positions);
+    }, 1000);
+}
+
+function updateCollaborators(positions) {
+    const collaboratorsElement = document.getElementById('collaborators');
+    collaboratorsElement.innerHTML = '';
+    positions.forEach(([id, position]) => {
+        if (id !== userId && position.fileId === currentFile) {
+            const marker = document.createElement('div');
+            marker.className = 'collaborator-cursor';
+            marker.style.backgroundColor = getColorForUser(id);
+            marker.style.left = `${position.position.column * 8}px`;
+            marker.style.top = `${position.position.line * 18}px`;
+            collaboratorsElement.appendChild(marker);
+        }
+    });
+}
+
+function getColorForUser(userId) {
+    const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    return colors[userId.charCodeAt(0) % colors.length];
 }

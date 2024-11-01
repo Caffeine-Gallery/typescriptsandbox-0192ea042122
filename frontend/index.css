@@ -43,6 +43,9 @@ header {
 h1 {
     margin: 0;
     font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .controls {
@@ -73,6 +76,9 @@ main {
 
 .file-explorer-header h3 {
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 #fileList {
@@ -84,6 +90,9 @@ main {
 #fileList li {
     padding: 0.5rem 1rem;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 #fileList li:hover {
@@ -98,11 +107,25 @@ main {
 #editor-container {
     flex: 1;
     overflow: hidden;
+    position: relative;
 }
 
 #editor {
     height: 100%;
     border: none;
+}
+
+#collaborators {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.collaborator-cursor {
+    position: absolute;
+    width: 2px;
+    height: 18px;
 }
 
 #output-container {
@@ -123,6 +146,9 @@ main {
 h3 {
     margin-top: 0;
     color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 pre {
@@ -160,6 +186,10 @@ button {
 
 .secondary-button:hover {
     background-color: rgba(255, 255, 255, 0.2);
+}
+
+.material-icons {
+    font-size: 1.2rem;
 }
 
 @media (max-width: 768px) {

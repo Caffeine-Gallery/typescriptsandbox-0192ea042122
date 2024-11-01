@@ -1,25 +1,44 @@
-import Array "mo:base/Array";
 import Hash "mo:base/Hash";
 
 import Text "mo:base/Text";
 import HashMap "mo:base/HashMap";
 import Nat "mo:base/Nat";
+import Array "mo:base/Array";
 import Iter "mo:base/Iter";
+import Time "mo:base/Time";
 
 actor {
-  var nextId : Nat = 0;
-  let codeStore = HashMap.HashMap<Nat, Text>(10, Nat.equal, Nat.hash);
-  stable var stableEntries : [(Nat, Text)] = [];
-
-  public func saveCode(code : Text) : async Nat {
-    let id = nextId;
-    codeStore.put(id, code);
-    nextId += 1;
-    id
+  type UserId = Text;
+  type FileId = Text;
+  type Position = {
+    line : Nat;
+    column : Nat;
+  };
+  type UserPosition = {
+    fileId : FileId;
+    position : Position;
   };
 
-  public query func getCode(id : Nat) : async ?Text {
-    codeStore.get(id)
+  private stable var nextId : Nat = 0;
+  private var codeStore = HashMap.HashMap<FileId, Text>(10, Text.equal, Text.hash);
+  private var userPositions = HashMap.HashMap<UserId, UserPosition>(10, Text.equal, Text.hash);
+
+  private stable var stableEntries : [(FileId, Text)] = [];
+
+  public shared(msg) func saveCode(fileId : FileId, code : Text) : async () {
+    codeStore.put(fileId, code);
+  };
+
+  public query func getCode(fileId : FileId) : async ?Text {
+    codeStore.get(fileId)
+  };
+
+  public shared(msg) func updateUserPosition(userId : UserId, fileId : FileId, line : Nat, column : Nat) : async () {
+    userPositions.put(userId, { fileId = fileId; position = { line = line; column = column } });
+  };
+
+  public query func getUserPositions() : async [(UserId, UserPosition)] {
+    Iter.toArray(userPositions.entries())
   };
 
   system func preupgrade() {
@@ -27,16 +46,6 @@ actor {
   };
 
   system func postupgrade() {
-    for ((k, v) in stableEntries.vals()) {
-      codeStore.put(k, v);
-    };
-    // Update nextId to be the highest ID + 1
-    var maxId : Nat = 0;
-    for ((id, _) in stableEntries.vals()) {
-      if (id >= maxId) {
-        maxId := id;
-      };
-    };
-    nextId := maxId + 1;
+    codeStore := HashMap.fromIter<FileId, Text>(stableEntries.vals(), 10, Text.equal, Text.hash);
   };
 }
