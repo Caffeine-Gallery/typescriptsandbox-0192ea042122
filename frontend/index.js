@@ -12,6 +12,11 @@ console.log(result);`;
 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.30.1/min/vs' } });
 
 require(['vs/editor/editor.main'], function () {
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+        target: monaco.languages.typescript.ScriptTarget.ES2015,
+        allowNonTsExtensions: true
+    });
+
     editor = monaco.editor.create(document.getElementById('editor'), {
         value: defaultCode,
         language: 'typescript',
@@ -39,48 +44,36 @@ async function runCode() {
 
     try {
         // Compile TypeScript
-        const result = await transpileAndExecute(code);
-        resultElement.textContent = result;
+        const worker = await monaco.languages.typescript.getTypeScriptWorker();
+        const uri = editor.getModel().uri;
+        const client = await worker(uri);
+        const result = await client.getEmitOutput(uri.toString());
+
+        if (result.outputFiles[0]) {
+            const transpiledCode = result.outputFiles[0].text;
+            const originalConsoleLog = console.log;
+            const logs = [];
+
+            console.log = function (...args) {
+                logs.push(args.map(arg => JSON.stringify(arg)).join(' '));
+                originalConsoleLog.apply(console, args);
+            };
+
+            try {
+                const executionResult = new Function(transpiledCode)();
+                console.log = originalConsoleLog;
+                document.getElementById('console').textContent = logs.join('\n');
+                resultElement.textContent = executionResult !== undefined ? executionResult.toString() : 'Executed successfully';
+            } catch (error) {
+                console.log = originalConsoleLog;
+                consoleElement.textContent = `Runtime Error: ${error.message}`;
+            }
+        } else {
+            consoleElement.textContent = 'Compilation failed';
+        }
     } catch (error) {
         consoleElement.textContent = `Error: ${error.message}`;
     }
-}
-
-async function transpileAndExecute(code) {
-    return new Promise((resolve, reject) => {
-        require(['vs/language/typescript/tsWorker'], function (tsWorker) {
-            const worker = tsWorker.create(function () {
-                return monaco.languages.typescript.getTypeScriptWorker();
-            });
-
-            worker().then(function (client) {
-                client.getEmitOutput(editor.getModel().uri.toString()).then(function (result) {
-                    if (result.outputFiles[0]) {
-                        const transpiledCode = result.outputFiles[0].text;
-                        const originalConsoleLog = console.log;
-                        const logs = [];
-
-                        console.log = function (...args) {
-                            logs.push(args.map(arg => JSON.stringify(arg)).join(' '));
-                            originalConsoleLog.apply(console, args);
-                        };
-
-                        try {
-                            const executionResult = new Function(transpiledCode)();
-                            console.log = originalConsoleLog;
-                            document.getElementById('console').textContent = logs.join('\n');
-                            resolve(executionResult !== undefined ? executionResult.toString() : 'Executed successfully');
-                        } catch (error) {
-                            console.log = originalConsoleLog;
-                            reject(error);
-                        }
-                    } else {
-                        reject(new Error('Compilation failed'));
-                    }
-                });
-            });
-        });
-    });
 }
 
 async function shareCode() {
