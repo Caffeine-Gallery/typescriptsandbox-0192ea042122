@@ -1,13 +1,16 @@
 import { backend } from 'declarations/backend';
 
 let editor;
-const defaultCode = `function greet(name: string) {
+let currentFile = 'main.ts';
+const files = {
+    'main.ts': `function greet(name: string) {
     console.log(\`Hello, \${name}!\`);
-    return \`Welcome to TypeScript Playground v0, \${name}!\`;
+    return \`Welcome to ICP TypeScript PlayGround, \${name}!\`;
 }
 
 const result = greet("User");
-console.log(result);`;
+console.log(result);`
+};
 
 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.30.1/min/vs' } });
 
@@ -18,7 +21,7 @@ require(['vs/editor/editor.main'], function () {
     });
 
     editor = monaco.editor.create(document.getElementById('editor'), {
-        value: defaultCode,
+        value: files[currentFile],
         language: 'typescript',
         theme: 'vs-dark',
         minimap: { enabled: false },
@@ -29,17 +32,50 @@ require(['vs/editor/editor.main'], function () {
     const urlParams = new URLSearchParams(window.location.search);
     const sharedCode = urlParams.get('code');
     if (sharedCode) {
-        editor.setValue(atob(sharedCode));
+        files[currentFile] = atob(sharedCode);
+        editor.setValue(files[currentFile]);
     }
 
     document.getElementById('runButton').addEventListener('click', runCode);
     document.getElementById('shareButton').addEventListener('click', shareCode);
     document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    document.getElementById('addFileButton').addEventListener('click', addFile);
 
     window.addEventListener('resize', () => {
         editor.layout();
     });
+
+    updateFileList();
 });
+
+function updateFileList() {
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '';
+    Object.keys(files).forEach(filename => {
+        const li = document.createElement('li');
+        li.textContent = filename;
+        li.addEventListener('click', () => switchFile(filename));
+        if (filename === currentFile) {
+            li.classList.add('active');
+        }
+        fileList.appendChild(li);
+    });
+}
+
+function switchFile(filename) {
+    files[currentFile] = editor.getValue();
+    currentFile = filename;
+    editor.setValue(files[currentFile]);
+    updateFileList();
+}
+
+function addFile() {
+    const filename = prompt('Enter file name (e.g., newfile.ts):');
+    if (filename && !files[filename]) {
+        files[filename] = '';
+        switchFile(filename);
+    }
+}
 
 async function runCode() {
     const code = editor.getValue();
