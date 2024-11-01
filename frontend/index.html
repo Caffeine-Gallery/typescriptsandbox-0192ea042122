@@ -3,23 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TypeScript Playground</title>
+    <title>TypeScript Playground v0</title>
     <link rel="stylesheet" href="index.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.30.1/min/vs/loader.min.js"></script>
 </head>
 <body>
     <div id="app">
-        <div id="editor"></div>
-        <div id="output">
-            <h3>Output:</h3>
-            <pre id="result"></pre>
-            <h3>Console:</h3>
-            <pre id="console"></pre>
-        </div>
-        <div id="controls">
-            <button id="runButton">Run</button>
-            <button id="shareButton">Share</button>
-        </div>
+        <header>
+            <h1>TypeScript Playground v0</h1>
+        </header>
+        <main>
+            <div id="editor-container">
+                <div id="editor"></div>
+            </div>
+            <div id="output-container">
+                <div id="output">
+                    <h3>Output</h3>
+                    <pre id="result"></pre>
+                </div>
+                <div id="console">
+                    <h3>Console</h3>
+                    <pre id="console-output"></pre>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <button id="runButton" class="primary-button">Run</button>
+            <button id="shareButton" class="secondary-button">Share</button>
+        </footer>
     </div>
     <script type="module" src="index.js"></script>
 </body>

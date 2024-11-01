@@ -3,7 +3,7 @@ import { backend } from 'declarations/backend';
 let editor;
 const defaultCode = `function greet(name: string) {
     console.log(\`Hello, \${name}!\`);
-    return \`Welcome to TypeScript Playground, \${name}!\`;
+    return \`Welcome to TypeScript Playground v0, \${name}!\`;
 }
 
 const result = greet("User");
@@ -20,7 +20,9 @@ require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(document.getElementById('editor'), {
         value: defaultCode,
         language: 'typescript',
-        theme: 'vs-dark'
+        theme: 'vs-dark',
+        minimap: { enabled: false },
+        automaticLayout: true
     });
 
     // Load code from URL if present
@@ -37,7 +39,7 @@ require(['vs/editor/editor.main'], function () {
 async function runCode() {
     const code = editor.getValue();
     const resultElement = document.getElementById('result');
-    const consoleElement = document.getElementById('console');
+    const consoleElement = document.getElementById('console-output');
 
     resultElement.textContent = '';
     consoleElement.textContent = '';
@@ -62,7 +64,7 @@ async function runCode() {
             try {
                 const executionResult = new Function(transpiledCode)();
                 console.log = originalConsoleLog;
-                document.getElementById('console').textContent = logs.join('\n');
+                consoleElement.textContent = logs.join('\n');
                 resultElement.textContent = executionResult !== undefined ? executionResult.toString() : 'Executed successfully';
             } catch (error) {
                 console.log = originalConsoleLog;
